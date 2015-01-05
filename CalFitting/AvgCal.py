@@ -1,6 +1,8 @@
 #AvgCal.py
 # Provide method for averaging cal diode signal in QUIJOTE TOD.
 
+import numpy as np
+
 def AvgCalSig(data,c,jd=[None],DriftModel=[None]):
     '''
     Return array of cal voltages

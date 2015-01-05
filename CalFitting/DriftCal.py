@@ -1,6 +1,8 @@
 #DriftCal.py
 # Calculate model for drift of calibration diode
 
+import numpy as np
+
 def CalDriftModel(data,c):
     '''
     Return model of drift in cal signal
