@@ -14,7 +14,7 @@ def FileList(substring,dir=''):
     substring -- string part of files to search for
     '''
 
-    filelist = glob.glob(dir+'*'+filename+'*')
+    filelist = glob.glob(dir+'*'+substring+'*')
     filelist = np.sort(filelist)
     
     return filelist

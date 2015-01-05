@@ -24,7 +24,7 @@ def DownSample(a,newlen,Errors=False):
         print 'WARNING: BIN SIZE GREATER THAN ARRAY SIZE'
         return None
 
-    bins,errs = DSD.DownSample(a,newlen)
+    bins,errs = DSD.downsample(a,newlen)
 
     if Errors:
         return bins, errs

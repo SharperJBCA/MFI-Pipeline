@@ -3,7 +3,7 @@
 
 import numpy as np
 
-def AvgCalSig(data,c,jd=[None],DriftModel=[None]):
+def AvgCalSig(data,c,jd=[None],mod=[None],DriftModel=[None]):
     '''
     Return array of cal voltages
 
@@ -15,6 +15,9 @@ def AvgCalSig(data,c,jd=[None],DriftModel=[None]):
     jd = Return the julian date of each diode signal
     DriftModel = Model describing how cal signal timing drifts
     '''
+
+    ijd = jd[0]
+    imod = mod[0]
 
     #Get the number of channels in data:
     nChan = data.shape[2]
@@ -30,12 +33,20 @@ def AvgCalSig(data,c,jd=[None],DriftModel=[None]):
         cal[-1000:] = False
 
     #Put the calsigs into a new container
-    if jd[0]:
-        calJd = jd[0,cal,0]
 
     calSig = data[0,cal,:]
     pulseTime = 50
     nPulses = len(c[0,cal,0])/pulseTime
+
+    if ijd != None:
+        calJd = jd[0,cal,0]
+        cjd = np.zeros((1,nPulses,1))
+
+    if (imod != None):
+        calMod = mod[0,cal,:]        
+        cmod = np.zeros((1,nPulses,mod.shape[2]))
+
+    
     cal = None
 
     if DriftModel[0]: 
@@ -44,25 +55,30 @@ def AvgCalSig(data,c,jd=[None],DriftModel=[None]):
         pfit = np.poly1d([0.,0.])
 
     #Calculate average signal - Calsignal = 50 samples
-    pulses = np.zeros((pulseTime,nPulses,nChan))
+    pulses = np.zeros((pulseTime,nChan))
     amps = np.zeros((1,nPulses,nChan))
-    cjd = np.zeros((1,nPulses,1))
 
-    for j in range(nChan):
-        for i in range(nPulses):
+    print DriftModel
+    for i in range(nPulses):
+        hi = (i+1)*pulseTime+int(pfit(i))
+        lo = i*pulseTime+int(pfit(i))
 
-            if (i+1)*pulseTime+int(pfit(i))-i*pulseTime+int(pfit(i)) > 0:
-                pulses[:,i,j] = calSig[i*pulseTime+int(pfit(i)):(i+1)*pulseTime+int(pfit(i)),j]
-                upper = np.mean(pulses[8 :21,i,j])
-                lower = np.mean(pulses[33:43,i,j])
-                amps[0,i,j] = upper - lower
+        if (hi-lo > 0) & (lo > 0):
+            pulses[:,:] = calSig[i*pulseTime+int(pfit(i)):(i+1)*pulseTime+int(pfit(i)),:]
+            upper = np.mean(pulses[8 :21,:],axis=0)
+            lower = np.mean(pulses[33:43,:],axis=0)
+            amps[0,i,:] = upper - lower
 
-            if (jd[0]) & (j == 0):
+            if (ijd != None):
                 cjd[0,i,0] = np.mean(calJd[i*pulseTime+int(pfit(i)):(i+1)*pulseTime+int(pfit(i))])
 
+            if (imod != None):
+                cmod[0,i,:] = np.mean(calMod[i*pulseTime+int(pfit(i)):(i+1)*pulseTime+int(pfit(i)),:],axis=0)
 
-    if (jd[0]):
-        return amps,cjd
-    else:
-        return amps
+    outlist = [amps]
+    if (ijd != None):
+        outlist = outlist + [cjd]
+    if (imod != None):
+        outlist = outlist + [cmod]
 
+    return outlist

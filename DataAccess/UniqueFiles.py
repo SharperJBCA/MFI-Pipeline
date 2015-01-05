@@ -12,7 +12,7 @@ def UniqueFiles(substring,dir=''):
     Keyword Arguments
     dir -- Directory to look for files in
     '''
-    files = glob.glob(dir+part)
+    files = glob.glob(dir+substring)
     files = [f[0:-8] for f in files]
 
     #Find unique filenames and sort:
@@ -29,7 +29,6 @@ if __name__ == '__main__':
     #User defines directory to look in and search string:
     dir = sys.argv[1]
     substring= sys.argv[2]
-
     ufiles = UniqueFiles(substring,dir=dir)
 
     print 'Saving filenames to: FileList.txt'
