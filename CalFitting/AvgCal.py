@@ -2,6 +2,7 @@
 # Provide method for averaging cal diode signal in QUIJOTE TOD.
 
 import numpy as np
+from CalFitting import DriftCal 
 
 def AvgCalSig(data,c,jd=[None],mod=[None],DriftModel=[None]):
     '''
@@ -15,6 +16,7 @@ def AvgCalSig(data,c,jd=[None],mod=[None],DriftModel=[None]):
     jd = Return the julian date of each diode signal
     DriftModel = Model describing how cal signal timing drifts
     '''
+
 
     ijd = jd[0]
     imod = mod[0]
@@ -49,22 +51,20 @@ def AvgCalSig(data,c,jd=[None],mod=[None],DriftModel=[None]):
     
     cal = None
 
-    if DriftModel[0]: 
-        pfit = np.poly1d(DriftModel)
-    else:
-        pfit = np.poly1d([0.,0.])
+    #Calculate the drift model for this observation:
+    pfit = DriftCal.CalDriftModel(data,c)
 
     #Calculate average signal - Calsignal = 50 samples
     pulses = np.zeros((pulseTime,nChan))
     amps = np.zeros((1,nPulses,nChan))
 
-    print DriftModel
     for i in range(nPulses):
         hi = (i+1)*pulseTime+int(pfit(i))
         lo = i*pulseTime+int(pfit(i))
 
-        if (hi-lo > 0) & (lo > 0):
+        if (hi-lo > 0) & (lo > 0) & (hi < calSig.shape[0]):
             pulses[:,:] = calSig[i*pulseTime+int(pfit(i)):(i+1)*pulseTime+int(pfit(i)),:]
+
             upper = np.mean(pulses[8 :21,:],axis=0)
             lower = np.mean(pulses[33:43,:],axis=0)
             amps[0,i,:] = upper - lower

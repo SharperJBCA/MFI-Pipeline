@@ -2,6 +2,7 @@
 # Calculate model for drift of calibration diode
 
 import numpy as np
+import scipy.interpolate as ip
 
 def CalDriftModel(data,c):
     '''
@@ -28,10 +29,12 @@ def CalDriftModel(data,c):
 
     spikeVoltage = 26
     amax = np.zeros(nPulses)
+    
     time = np.arange(nPulses)
     for i in range(nPulses):
         amax[i] = (calSig[i*pulseTime:(i+1)*pulseTime,0]).argmax() - spikeVoltage
-        
-    pfit = np.poly1d(np.polyfit(time,amax,1))
+
+    
+    pfit = ip.interp1d(time,amax)
     
     return pfit
