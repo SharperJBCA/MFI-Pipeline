@@ -34,14 +34,14 @@ def Count(filelist,keys,dir=''):
     '''
 
     hdu = pyfits.open(dir+filelist[0])
-    dShapes = [np.array([0.,0.,hdu[1].data[k].shape[2]]) for k in keys]
+    dShapes = [np.array([1.,0.,hdu[1].data[k].shape[2]],dtype='i') for k in keys]
 
     #Count number of samples in files    
     for i,f in enumerate(filelist):
         hdu = pyfits.open(dir+f)
         
-        for k in keys:
-            dShapes[1] += hdu[1].data[k].shape[1]
+        for ik,k in enumerate(keys):
+            dShapes[ik][1] += hdu[1].data[k].shape[1]
         
         hdu.close()
         del hdu
@@ -58,26 +58,29 @@ def FullObs(filelist,keys,dir=''):
 
     '''
 
-    dShapes,nFiles = Count(filelist,keys,dir='')
+    dShapes,nFiles = Count(filelist,keys,dir=dir)
 
     #Setup data containers
     data = {keys[i]:np.zeros(dShapes[i]) for i in range(len(keys))}
 
+    lastLen = np.zeros(len(keys),dtype='i')
+
     #Read in the data properly
-    lastLen = 0
     print 'TOTAL NUMBER OF FILES:',len(filelist)
     print 'OPEN: '
     for j,f in enumerate(filelist):
         print j
-        hdu = pyfits.open(f)
+        hdu = pyfits.open(dir+f)
 
-        thisLen   = hdu[1].data['DATA'].shape[1]
-        for k in keys:
-            data[k][0,lastLen:lastLen+thisLen,:] = hdu[1].data[k][0]
-            
+        for ik,k in enumerate(keys):
+            thisLen   = hdu[1].data[keys[0]].shape[1]
+            print lastLen[ik],thisLen,lastLen[ik]+thisLen
+            print data[k].shape
+            data[k][0,lastLen[ik]:lastLen[ik]+thisLen,:] = hdu[1].data[k][0]
+            lastLen[ik]  += thisLen
+
         hdu.close()
         del hdu
-        lastLen  += thisLen
 
     print ''
     print '---'
