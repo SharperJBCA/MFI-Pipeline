@@ -65,8 +65,8 @@ def AvgCalSig(data,c,jd=[None],mod=[None],DriftModel=[None]):
         if (hi-lo > 0) & (lo > 0) & (hi < calSig.shape[0]):
             pulses[:,:] = calSig[i*pulseTime+int(pfit(i)):(i+1)*pulseTime+int(pfit(i)),:]
 
-            upper = np.mean(pulses[8 :21,:],axis=0)
-            lower = np.mean(pulses[33:43,:],axis=0)
+            upper = np.mean(pulses[11 :21,:],axis=0)
+            lower = np.mean(pulses[35:45,:],axis=0)
             amps[0,i,:] = upper - lower
 
             if (ijd != None):

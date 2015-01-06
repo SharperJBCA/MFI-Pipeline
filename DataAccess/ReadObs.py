@@ -73,7 +73,7 @@ def FullObs(filelist,keys,dir=''):
         hdu = pyfits.open(dir+f)
 
         for ik,k in enumerate(keys):
-            thisLen   = hdu[1].data[keys[0]].shape[1]
+            thisLen   = hdu[1].data[k].shape[1]
             print lastLen[ik],thisLen,lastLen[ik]+thisLen
             print data[k].shape
             data[k][0,lastLen[ik]:lastLen[ik]+thisLen,:] = hdu[1].data[k][0]
