@@ -1,6 +1,5 @@
 !Routine for fast downsampling of an array of doubles.
 
-
 subroutine DownSample(a,newlen,alen,out,err)
   implicit none
 
@@ -60,4 +59,3 @@ subroutine DownSample(a,newlen,alen,out,err)
   end do
 
 end subroutine DownSample
-  

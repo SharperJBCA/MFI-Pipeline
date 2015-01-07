@@ -51,7 +51,7 @@ def WriteTable(filename,data,cols,clobber=True,Header=None):
     tbhdu = pyfits.new_table(tablelist) #This is deprecated, update function
 
     hdu = pyfits.PrimaryHDU()
-
+        
     #Read in any header info 
     if Header:
         for key,val in Header.iteritems():
@@ -62,6 +62,7 @@ def WriteTable(filename,data,cols,clobber=True,Header=None):
 
     print 'WRITING FILE AS: ', filename
     thdulist.writeto(filename,clobber=clobber)
+    thdulist.close()
 
 
 def WriteImage(filename,map,clobber=True,Header=None,Return=False):
