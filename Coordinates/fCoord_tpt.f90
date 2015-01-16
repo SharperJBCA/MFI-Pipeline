@@ -9,7 +9,7 @@ subroutine get_h2e_tpoint(az, el, xpos, ypos, Pf, Px, Py, Pc, Pn, Pa, Pb, lat,ln
   implicit none
 
   integer n, gal
-!f2py intent(in) n, horizon
+!f2py intent(in) n, gal
   
   real*8 mjd(n)
   real*8 az(n), el(n), lat,lng
@@ -31,6 +31,7 @@ subroutine get_h2e_tpoint(az, el, xpos, ypos, Pf, Px, Py, Pc, Pn, Pa, Pb, lat,ln
   !Apply corrections:
   do i=1,n
      call ffunc_h2e(az(i),el(i),xpos,ypos,Pf,Px,Py,Pc,Pn,Pa,Pb,azc,elc)
+
 
      !Convert to RA/DEC
      call sla_dh2e(azc,elc,lat,ha,dec(i))
@@ -162,6 +163,7 @@ subroutine ffunc_h2e(az, el, xpos, ypos, Pf, Px, Py, Pc, Pn, Pa, Pb,azc,elc)
   z = z0 + dzn
   
   !Hookes Law:
+
   x0 = x
   y0 = y
   z0 = z
@@ -195,6 +197,8 @@ subroutine ffunc_h2e(az, el, xpos, ypos, Pf, Px, Py, Pc, Pn, Pa, Pb,azc,elc)
   !Convert back to AZ,EL
   elc = asin( z/sqrt(x*x + y*y + z*z) ) 
   azc = pi - atan2(y,x)
+
+
 
   ELSE
      azc = az

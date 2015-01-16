@@ -6,7 +6,7 @@ import numpy as np
 
 def CasAFlux(nu,mjd):
     '''
-    Return expected flux of Cas A for a given frequency and time.
+    Return expected flux of Cas A for a given frequency and time in Jy.
 
     Arguments
     nu -- Frequency in GHz
@@ -25,3 +25,43 @@ def CasAFlux(nu,mjd):
     alpha = 5.3e-3 #per year
 
     return 10**(a + b*np.log10(nu/40.) + c*np.log10(nu/40.)**2 ) * (1 - alpha*Tobs)
+
+
+def SourceCoord(source,gal=False):
+    '''
+    Returns RA/DEC of source
+
+    Arguments
+    source -- Name of a known source
+    
+    '''    
+
+    #Read in sources file
+    dir =  __file__.split('/')
+    srcs = np.loadtxt('/'.join(dir[:-1])+'/sources.lis',dtype='string')
+
+    src_dict = {s[0]:[float(s[1]),float(s[2]),float(s[3]),float(s[4])] for s in srcs}
+
+    
+    if gal:
+        return src_dict[source][2],src_dict[source][3]
+    else:
+        return src_dict[source][0],src_dict[source][1]
+        
+
+def toJy(nu,beam):
+    '''
+    Return Jy/K for a given beam and frequency
+
+    Arguments
+    nu -- frequency in GHz
+    beam -- beam in steradians.
+    
+    '''
+
+    k = 1.3806488e-23
+    c = 299792458.
+    nu *= 1e9
+    Jy = 1e26
+
+    return 2.*k*nu**2/c**2 * beam * Jy

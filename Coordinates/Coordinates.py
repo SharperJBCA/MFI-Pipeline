@@ -44,9 +44,8 @@ def Hor2Sky(az,el,mjd,lat=28.3002*np.pi/180,lng=16.5090*np.pi/180.,gal=0,TPoints
         print 'WARNING: ELEVATION OUT OF RANGE (-pi < el < pi)'
         return None
 
-    if np.max(jd) > 2400000:
+    if np.max(mjd) > 2400000:
         print 'WARNING: ARE YOU USING MODIFIED JULIAN DATE?'
-
 
     ra,dec,p = fCoord_tpt.get_h2e_tpoint(az,el,
                                          TPoints['xpos'],TPoints['ypos'],TPoints['Pf'],

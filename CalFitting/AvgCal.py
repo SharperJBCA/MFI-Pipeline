@@ -4,7 +4,7 @@
 import numpy as np
 from CalFitting import DriftCal 
 
-def AvgCalSig(data,c,jd=[None],mod=[None],DriftModel=[None]):
+def AvgCalSig(data,c,jd=[None],mod=None,DriftModel=None):
     '''
     Return array of cal voltages
 
@@ -40,11 +40,11 @@ def AvgCalSig(data,c,jd=[None],mod=[None],DriftModel=[None]):
     pulseTime = 50
     nPulses = len(c[0,cal,0])/pulseTime
 
-    if ijd != None:
+    if (type(ijd) != type(None)):
         calJd = jd[0,cal,0]
         cjd = np.zeros((1,nPulses,1))
 
-    if (imod != None):
+    if (type(imod) != type(None)):
         calMod = mod[0,cal,:]        
         cmod = np.zeros((1,nPulses,mod.shape[2]))
 
@@ -56,7 +56,8 @@ def AvgCalSig(data,c,jd=[None],mod=[None],DriftModel=[None]):
 
     #Calculate average signal - Calsignal = 50 samples
     pulses = np.zeros((pulseTime,nChan))
-    amps = np.zeros((1,nPulses,nChan))
+    amps  = np.zeros((1,nPulses,nChan))
+    bkgds = np.zeros((1,nPulses,nChan))
 
     for i in range(nPulses):
         hi = (i+1)*pulseTime+int(pfit(i))
@@ -68,19 +69,20 @@ def AvgCalSig(data,c,jd=[None],mod=[None],DriftModel=[None]):
 
             upper = np.mean(pulses[11 :21,:],axis=0)
             lower = np.mean(pulses[35:45,:],axis=0)
-            amps[0,i,:] = upper - lower
+            amps[0,i,:]  = upper - lower
+            bkgds[0,i,:] = lower
 
 
-            if (ijd != None):
+            if (type(ijd) != type(None)):
                 cjd[0,i,0] = np.mean(calJd[i*pulseTime+int(pfit(i)):(i+1)*pulseTime+int(pfit(i))])
 
-            if (imod != None):
+            if (type(imod) != type(None)):
                 cmod[0,i,:] = np.mean(calMod[i*pulseTime+int(pfit(i)):(i+1)*pulseTime+int(pfit(i)),:],axis=0)
 
-    outlist = [amps]
-    if (ijd != None):
+    outlist = [amps,bkgds]
+    if (type(ijd) != type(None)):
         outlist = outlist + [cjd]
-    if (imod != None):
+    if (type(imod) != type(None)):
         outlist = outlist + [cmod]
 
     return outlist

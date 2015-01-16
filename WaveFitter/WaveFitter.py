@@ -100,3 +100,103 @@ def FFTMethod(x_in,y_in):
 
     return P1
     
+
+##
+# --- None FFT method for fitting a sinewave:
+##
+
+def Error_NoFFT(P,X,Y):
+    '''
+    Return array of residuals
+
+    Notes: Used for SciPy least-squares fitter in  FindWave
+    '''
+
+    if (P[3] > 0):
+        P[2] = np.mod(P[2],1.)
+        return (FitSine(P,X) - Y)
+    else:
+        return Y*0. + 1e24
+
+
+
+def residual(P,X,Y,Pup):
+    '''
+    Returns standard deviation for each bin of waveform.
+
+    Notes: Used just for SciPy basin-hopping routine in FindWave
+    '''
+
+    if (P[0] >0) & (P[0]< Pup):
+
+        nsteps = 50
+        stepsize = (X.size)/50
+
+        #Sort the data based on time P0
+        sd = (np.mod(X,P[0])).argsort()
+
+        stds = 0.
+        N = Y[sd[:nsteps*stepsize]]
+        N = np.reshape(N,(nsteps,stepsize))
+        N = np.std(N,axis=1)
+        stds = np.sum(N**2)
+        
+        return np.sqrt(stds)
+    else:
+        return 1e24
+
+def FindWave(time,vals,WL=20.,Pup=None):
+    '''
+    Return best fit cosine wave for discontinous periodic data.
+
+    Arguments
+    time -- Array containing time coordinate of each vals sample
+    vals -- Measured data array
+
+    Keyword Arguments
+    WL -- Initial guess at Wavelength (better to underestimate!)
+    Pup -- Upper limit to wavelength guess (Default: 2*WL)
+    '''
+
+    P0 = [WL]
+
+    if Pup == None:
+        Pup = WL * 2.
+
+
+
+    #Take off the first and last 10% of data due to end effects:
+    start = int(time.size*0.1)
+    end = time.size-start
+    minjd = np.min(time)
+
+    X = time[start:end]-minjd
+    Y = vals[start:end]    
+
+    #Loop the basin hopping until inital guess is good enough:
+    niter = 3
+    for i in range(niter):
+
+        #Find initial guess at wavelength
+        Pbasin = sp.basinhopping(residual,P0,minimizer_kwargs={'args':(X,Y,Pup)},stepsize=4.,T = 1.)
+
+        #Sort the data according to guess at wavelength
+        sd = (np.mod(X,Pbasin['x'])).argsort()
+
+        #Estimate the phase
+        maxval_time = np.argmax(Y[sd])
+        Phase = (Pbasin['x'] - np.mod(X[sd[maxval_time]],Pbasin['x']))/Pbasin['x']
+
+        #Generate least-squares initial parameters
+        Wavelength = Pbasin['x']
+        Amplitude = np.max(Y) - np.median(Y)
+        P0a = [Amplitude,np.median(Y),Phase,Wavelength]
+
+        #Fit wavelength of original X and Y data.
+        P1, s = sp.leastsq(Error_NoFFT,P0a,args=(X,Y))
+
+        #If fit is close to inital guess, accept fit.
+        if P1[1] > Amplitude*0.75:
+            break
+
+    return P1

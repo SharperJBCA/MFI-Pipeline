@@ -35,7 +35,7 @@ def residual(P,x,y,data,e):
     
     return (d - data)/e
 
-def FitSource(data,x,y,beam=0.92/2.355,rvals=None,filename='Out.dat'):
+def FitSource(data,xi,yi,beam=0.92/2.355,rvals=None,filename='Out.dat',err=None):
     '''
     Return array of parameters defining a source
 
@@ -74,10 +74,10 @@ def FitSource(data,x,y,beam=0.92/2.355,rvals=None,filename='Out.dat'):
 
 
     #Define limits:
-    isSource     = (xi**2 + yi**2 < r0**2) 
-    isGaussian   = (xi**2 + yi**2 < r1**2) 
-    isBackground = (xi**2 + yi**2 < r3**2) & (xi**2 + yi**2 > r2**2)
-    isNotSource  = (xi**2 + yi**2 > r2**2)    
+    isSource     = (xi**2 + yi**2 < rvals['r0']**2) 
+    isGaussian   = (xi**2 + yi**2 < rvals['r1']**2) 
+    isBackground = (xi**2 + yi**2 < rvals['r3']**2) & (xi**2 + yi**2 > rvals['r2']**2)
+    isNotSource  = (xi**2 + yi**2 > rvals['r2']**2)    
 
     #Check source exists:
     if data[isSource].size > 10:
@@ -95,12 +95,16 @@ def FitSource(data,x,y,beam=0.92/2.355,rvals=None,filename='Out.dat'):
         time = np.arange(data.size)
         maxarg = time[fwhm[(data[fwhm]).argmax()]]
 
+        if type(err) == type(None):
+            err= data*0.+1.
+
         out = minimize(residual,params,args=(xi [(isBackground | isGaussian)],
                                              yi [(isBackground | isGaussian)],
-                                             tod[(isBackground | isGaussian)],
+                                             data[(isBackground | isGaussian)],
                                              err[(isBackground | isGaussian)],),method='leastsq')
-        vals = param.valuedict()
 
-        return param.valuedict()
+        vals = params.valuesdict()
+
+        return vals
     else:
         return None
