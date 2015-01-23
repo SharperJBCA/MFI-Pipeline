@@ -26,6 +26,28 @@ def CasAFlux(nu,mjd):
 
     return 10**(a + b*np.log10(nu/40.) + c*np.log10(nu/40.)**2 ) * (1 - alpha*Tobs)
 
+def TauAFlux(nu,mjd):
+    '''
+    Return expected flux of Tau A for a given frequency and time in Jy.
+
+    Arguments
+    nu -- Frequency in GHz
+    mjd -- Time in modified Julian Date
+    
+    '''
+    
+    #Tobs = years from 2000
+    Tobs = (mjd - 51543.)/365.25
+
+    #Flux parameters for year 2000
+    a =  2.502
+    b = -0.35
+    c = 0.0
+
+    alpha = 2.1e-3 #per year
+
+    return 10**(a + b*np.log10(nu/40.) + c*np.log10(nu/40.)**2 ) * (1 - alpha*Tobs)
+
 
 def SourceCoord(source,gal=False):
     '''

@@ -30,7 +30,7 @@ if __name__ == "__main__":
     dioModel = np.loadtxt('/nas/scratch/sharper/QUIJOTE/MFI-Pipeline/MFI_INFO/DiodePolModel-Epoch2.dat')
 
     #Read in list of files (Just needs to be part of name e.g. CASS would read in all file containing substring CASS)
-    files = np.loadtxt('Cass',dtype='string',ndmin=1)
+    files = np.loadtxt('FileList.txt',dtype='string',ndmin=1)
 
     #Read in T-Point parameters:
     tpoints = np.loadtxt(mfidir+'focal_plane.ini')
@@ -60,7 +60,7 @@ if __name__ == "__main__":
 
 
         #Find the AZ scan starts/ends
-        seconds = 24.*60.**2
+        seconds = 24.*60.**2        
         P1 = WaveFitter.FindWave(data['JD'][0,:,0]*seconds,data['AZ'][0,:,0])
         scanLength = P1[3]/seconds/2.
         #nScans = (Phase Start time) -> Range(jd) / scanLength
@@ -129,8 +129,10 @@ if __name__ == "__main__":
                                                                               'Pb':tpoints[(chPair[0]+horn*8)/8,9]})
 
                 #Convert RA/DEC to telescope frame:
-                sra,sdec = SourceFitting.ModelFlux.SourceCoord('CASA')
-                xi = (np.mod(ra*180./np.pi+180.,360.) - (sra-180.))*np.cos(dec) #!!! Remove the 180 if not fitting for Cas A!!!
+                sra,sdec = SourceFitting.ModelFlux.SourceCoord('CRAB')
+                #xi = (np.mod(ra*180./np.pi+180.,360.) - (sra-180.))*np.cos(dec) #!!! Remove the 180 if not fitting for Cas A!!!
+                xi = (np.mod(ra*180./np.pi,360.) - (sra))*np.cos(dec) #!!! Remove the 180 if not fitting for Cas A!!!
+
                 yi = (dec*180./np.pi-sdec) #!!! Remove the 180 if not fitting for Cas A!!!
 
                 #Rotate sky coordinates to telescope frame
@@ -163,7 +165,7 @@ if __name__ == "__main__":
                     Params[ch+(horn-1)*4] = 0.
                     rFacts[ch+(horn-1)*4] = 0.
 
-        TextFiles.AppendFile('test',[f,
+        TextFiles.AppendFile('TauA',[f,
                                          Params[0],Params[1],Params[2],Params[3],
                                          Params[4],Params[5],Params[6],Params[7],
                                          Params[8],Params[9],Params[10],Params[11],

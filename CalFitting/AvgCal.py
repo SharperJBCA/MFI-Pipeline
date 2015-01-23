@@ -17,10 +17,6 @@ def AvgCalSig(data,c,jd=[None],mod=None,DriftModel=None):
     DriftModel = Model describing how cal signal timing drifts
     '''
 
-
-    ijd = jd[0]
-    imod = mod[0]
-
     #Get the number of channels in data:
     nChan = data.shape[2]
 
@@ -40,11 +36,11 @@ def AvgCalSig(data,c,jd=[None],mod=None,DriftModel=None):
     pulseTime = 50
     nPulses = len(c[0,cal,0])/pulseTime
 
-    if (type(ijd) != type(None)):
+    if (type(jd) != type(None)):
         calJd = jd[0,cal,0]
         cjd = np.zeros((1,nPulses,1))
 
-    if (type(imod) != type(None)):
+    if (type(mod) != type(None)):
         calMod = mod[0,cal,:]        
         cmod = np.zeros((1,nPulses,mod.shape[2]))
 
@@ -73,16 +69,16 @@ def AvgCalSig(data,c,jd=[None],mod=None,DriftModel=None):
             bkgds[0,i,:] = lower
 
 
-            if (type(ijd) != type(None)):
+            if (type(jd) != type(None)):
                 cjd[0,i,0] = np.mean(calJd[i*pulseTime+int(pfit(i)):(i+1)*pulseTime+int(pfit(i))])
 
-            if (type(imod) != type(None)):
+            if (type(mod) != type(None)):
                 cmod[0,i,:] = np.mean(calMod[i*pulseTime+int(pfit(i)):(i+1)*pulseTime+int(pfit(i)),:],axis=0)
 
     outlist = [amps,bkgds]
-    if (type(ijd) != type(None)):
+    if (type(jd) != type(None)):
         outlist = outlist + [cjd]
-    if (type(imod) != type(None)):
+    if (type(mod) != type(None)):
         outlist = outlist + [cmod]
 
     return outlist

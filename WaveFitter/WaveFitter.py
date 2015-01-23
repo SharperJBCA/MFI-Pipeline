@@ -119,7 +119,7 @@ def Error_NoFFT(P,X,Y):
         return Y*0. + 1e24
 
 
-
+from matplotlib import pyplot
 def residual(P,X,Y,Pup):
     '''
     Returns standard deviation for each bin of waveform.
@@ -140,7 +140,6 @@ def residual(P,X,Y,Pup):
         N = np.reshape(N,(nsteps,stepsize))
         N = np.std(N,axis=1)
         stds = np.sum(N**2)
-        
         return np.sqrt(stds)
     else:
         return 1e24
