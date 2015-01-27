@@ -48,7 +48,7 @@ def Count(filelist,keys,dir=''):
 
     return dShapes,len(filelist)
 
-def FullObs(filelist,keys,dir=''):
+def FullObs(filelist,keys,dir='',colids = None):
     '''
     Return dictionary of data from many Table Fits files
 
@@ -56,27 +56,38 @@ def FullObs(filelist,keys,dir=''):
     filename -- Name of table fits file to access
     keys -- Array of keys to pull from table fits file
 
+    Keyword Arguments
+    colids -- If a list is passed, only the column indicated for each key will be returned. (Default: None)
+
     '''
 
     dShapes,nFiles = Count(filelist,keys,dir=dir)
 
     #Setup data containers
+    if type(colids) != type(None):
+        for i in range(len(dShapes)):
+            dShapes[i][2] = 1
+        
     data = {keys[i]:np.zeros(dShapes[i]) for i in range(len(keys))}
 
+    #Columns can have different lengths:
     lastLen = np.zeros(len(keys),dtype='i')
 
     #Read in the data properly
     print 'TOTAL NUMBER OF FILES:',len(filelist)
     print 'OPEN: '
     for j,f in enumerate(filelist):
-        print j
+        print f, j
         hdu = pyfits.open(dir+f)
 
         for ik,k in enumerate(keys):
             thisLen   = hdu[1].data[k].shape[1]
-            print lastLen[ik],thisLen,lastLen[ik]+thisLen
-            print data[k].shape
-            data[k][0,lastLen[ik]:lastLen[ik]+thisLen,:] = hdu[1].data[k][0]
+
+            if type(colids) != type(None):            
+                data[k][0,lastLen[ik]:lastLen[ik]+thisLen,0] = hdu[1].data[k][0,:,colids[ik]]
+            else:
+                data[k][0,lastLen[ik]:lastLen[ik]+thisLen,:] = hdu[1].data[k][0]
+                
             lastLen[ik]  += thisLen
 
         hdu.close()
@@ -86,6 +97,8 @@ def FullObs(filelist,keys,dir=''):
     print '---'
     return data
 
+#print lastLen[ik],thisLen,lastLen[ik]+thisLen
+#print data[k].shape
 
 def SingleObs(filename,keys,dir=''):
     '''
@@ -112,6 +125,68 @@ def SingleObs(filename,keys,dir=''):
 
     hdu.close()
     del hdu
+
+    print ''
+    print '---'
+    return data
+
+
+import Coordinates
+import healpy as hp
+
+def FullObsMapping(filelist,keys,TPoints,ch,jd0=56244.,nside = 512,dir=''):
+    '''
+    A special form of FullObs specifically for Map-Making to keep memory use low:
+    Expects the following keys: ["DATA","MASK","AZ","DEC","JD"]
+    
+    
+    Return dictionary of data from many Table Fits files
+
+    Arguments
+    filename -- Name of table fits file to access
+    keys -- Array of keys to pull from table fits file
+
+    Keyword Arguments
+    colids -- If a list is passed, only the column indicated for each key will be returned. (Default: None)
+
+    '''
+
+    dShapes,nFiles = Count(filelist,keys,dir=dir)
+
+    #Setup data containers
+    data = {'TOD':np.zeros((1,dShapes[0][1],1)),
+            'PIX':np.zeros((1,dShapes[0][1],1)),
+            'MASK':np.zeros((1,dShapes[0][1],1),dtype='bool')}
+
+
+    #Read in the data properly
+    print 'TOTAL NUMBER OF FILES:',len(filelist)
+    print 'OPEN: '
+
+    lastLen = 0
+    for j,f in enumerate(filelist):
+        print f, j
+        hdu = pyfits.open(dir+f)
+
+        thisLen   = hdu[1].data['DATA'].shape[1]
+
+        
+        data['TOD'][0,lastLen:lastLen+thisLen,0] = hdu[1].data['DATA'][0,:,ch]
+
+        ra,dec,p = Coordinates.Hor2Sky(hdu[1].data['AZ'][0,:,0]*np.pi/180.,
+                                       hdu[1].data['EL'][0,:,0]*np.pi/180.,
+                                       hdu[1].data['JD'][0,:,0]+jd0,TPoints=TPoints)
+
+        data['MASK'][0,lastLen:lastLen+thisLen,0] = hdu[1].data['MASK'][0,:,ch].astype('bool') & (dec > 0.) 
+
+        pix = hp.ang2pix(nside,np.pi/2.-dec,ra)
+
+        data['PIX'][0,lastLen:lastLen+thisLen,0] = pix
+        lastLen  += thisLen
+
+        hdu.close()
+        del hdu
+
 
     print ''
     print '---'

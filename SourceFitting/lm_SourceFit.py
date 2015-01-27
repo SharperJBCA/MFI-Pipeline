@@ -35,7 +35,7 @@ def residual(P,x,y,data,e):
     
     return (d - data)/e
 
-def FitSource(data,xi,yi,beam=0.92/2.355,rvals=None,filename='Out.dat',err=None):
+def FitSource(data,xi,yi,beam={'X':[0.92/2.355,True],'Y':[0.92/2.355,True]},rvals=None,filename='Out.dat',err=None):
     '''
     Return array of parameters defining a source
 
@@ -67,10 +67,10 @@ def FitSource(data,xi,yi,beam=0.92/2.355,rvals=None,filename='Out.dat',err=None)
 
     #Define some default values for rvals:
     if type(rvals) != type(dict()):
-        rvals = {'r0':beam*3.5,
-                 'r1':beam*1.175,
-                 'r2':beam*3.,
-                 'r3':beam*6.}
+        rvals = {'r0':beam['X'][0]*3.5,
+                 'r1':beam['X'][0]*1.175,
+                 'r2':beam['X'][0]*3.,
+                 'r3':beam['X'][0]*6.}
 
 
     #Define limits:
@@ -85,8 +85,8 @@ def FitSource(data,xi,yi,beam=0.92/2.355,rvals=None,filename='Out.dat',err=None)
         params = Parameters()
         params.add('bkgd',np.median(data)  )
         params.add('amp' ,np.max(data-np.median(data))  ,min=0)
-        params.add('wx'  ,beam,min=beam*0.95,max=beam*1.05,vary=True)
-        params.add('wy'  ,beam,min=beam*0.95,max=beam*1.05,vary=True)
+        params.add('wx'  ,beam['X'][0],min=beam['X'][0]*0.95,max=beam['X'][0]*1.05,vary=beam['X'][1])
+        params.add('wy'  ,beam['Y'][0],min=beam['Y'][0]*0.95,max=beam['Y'][0]*1.05,vary=beam['Y'][1])
         params.add('cx'  ,0.,vary=False)
         params.add('cy'  ,0.,vary=False)
 

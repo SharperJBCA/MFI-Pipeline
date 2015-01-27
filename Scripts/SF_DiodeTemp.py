@@ -12,85 +12,141 @@ from matplotlib import pyplot
 import CalFitting
 import WaveFitter
 import Binning
+import DataAccess
 
 import SourceFitting
 from SourceFitting.ModelFlux import toJy
 
+def SourceFlux(nu_bp,G_bp,mjd,srcs):
+    '''
+    Return list of fluxes for Tau A or Cas A
+    '''
+    #First determine central frequency:
+    dnu = nu_bp[1] - nu_bp[0]
+    nu_c = np.sum(nu_bp*G_bp)/np.sum(G_bp)
+    BW = nu_bp*np.sum(G_bp)**2/np.sum(G_bp**2)
 
+
+    #Central frequency of Tau A:
+    spec_crab = SourceFitting.ModelFlux.TauAFlux(nu_bp,mjd[0])
+    nu_c_crab = np.sum(nu_bp*G_bp*spec_crab)/np.sum(G_bp*spec_crab)
+
+    #Central frequency of Cas A:
+    spec_casa = SourceFitting.ModelFlux.CasAFlux(nu_bp,mjd[0])
+    nu_c_casa = np.sum(nu_bp*G_bp*spec_casa)/np.sum(G_bp*spec_casa)     
+
+    #Which vals are Cas/Tau:
+    crabs = np.where((srcs == 'CRAB'))[0]
+    casas = np.where((srcs == 'CASS'))[0]
+
+    fluxs = np.zeros(len(srcs))
+    corfact = np.zeros(len(srcs))
+
+    fluxs[crabs] = SourceFitting.ModelFlux.TauAFlux(nu_c,mjd[crabs])
+    fluxs[casas] = SourceFitting.ModelFlux.CasAFlux(nu_c,mjd[casas])
+
+    #Ratio between 
+    corfact[crabs] = SourceFitting.ModelFlux.TauAFlux(nu_c,mjd[crabs])/SourceFitting.ModelFlux.TauAFlux(nu_c_crab,mjd[crabs])
+    corfact[casas] = SourceFitting.ModelFlux.CasAFlux(nu_c,mjd[casas])/SourceFitting.ModelFlux.CasAFlux(nu_c_casa,mjd[casas])
+
+
+    return fluxs,corfact
+
+def ReadBandpasses(mfidir):
+
+    #Read in bandpasses:
+    bandpasses = [np.loadtxt(mfidir+'Pol2_bandpass.dat',skiprows=1),
+                  np.loadtxt(mfidir+'Pol3_bandpass.dat',skiprows=1),
+                  np.loadtxt(mfidir+'Pol4_bandpass.dat',skiprows=1)]
+    
+    #Read in avg-rfactors
+    rfactors = np.loadtxt(mfidir+'AvgRFactors.dat')
+
+    freqs = bandpasses[0][:,0]
+    band1 = np.array([bandpasses[0][:,1] + rfactors[4  ]*bandpasses[0][:,7],
+                      bandpasses[0][:,2] + rfactors[5  ]*bandpasses[0][:,8],
+                      bandpasses[0][:,3] + rfactors[6  ]*bandpasses[0][:,5],
+                      bandpasses[0][:,4] + rfactors[7  ]*bandpasses[0][:,6],
+                      bandpasses[1][:,1] + rfactors[4+4]*bandpasses[1][:,7],
+                      bandpasses[1][:,2] + rfactors[5+4]*bandpasses[1][:,8],
+                      bandpasses[1][:,3] + rfactors[6+4]*bandpasses[1][:,5],
+                      bandpasses[1][:,4] + rfactors[7+4]*bandpasses[1][:,6],
+                      bandpasses[2][:,1] + rfactors[4+8]*bandpasses[2][:,7],
+                      bandpasses[2][:,2] + rfactors[5+8]*bandpasses[2][:,8],
+                      bandpasses[2][:,3] + rfactors[6+8]*bandpasses[2][:,5],
+                      bandpasses[2][:,4] + rfactors[7+8]*bandpasses[2][:,6]])
+
+    return [freqs,band1]
+
+    
 if __name__ == '__main__':
 
-    n = np.loadtxt('TauA',dtype='string')
+    mfidir = '/nas/scratch/sharper/QUIJOTE/MFI-Pipeline/MFI_INFO/'
+
+    #Define telescope constants:
     jd0 = 56244.
-
-    print n.shape
-
-    beam13 = (0.66*np.pi/180.)**2#(0.88*np.pi/180.)**2#
-    beam11 = (0.66*np.pi/180.)**2#(0.86*np.pi/180.)**2#
-    f1 = 19.
-    f2 = 17.
-    h = 2
-
-    gd = ((n[:,5].astype('f') != 0.))
-
-    CasFlux13GHz = SourceFitting.ModelFlux.TauAFlux(f1,n[gd,26].astype('f')+jd0)
-    CasFlux11GHz = SourceFitting.ModelFlux.TauAFlux(f2,n[gd,26].astype('f')+jd0)
-
-    #pyplot.hist(CasFlux13GHz/n[:,1].astype('f')/ toJy(f1,beam13))
-    #pyplot.hist(CasFlux13GHz/n[:,3].astype('f')/ toJy(f2,beam13),alpha=0.6)
-
-    #Calculate stability of correlated channels
-    cTd11 = np.median(CasFlux11GHz/n[gd,2+h*4].astype('f')/ toJy(f2,beam11))
-    stdcTd11 = np.std(CasFlux11GHz/n[gd,2+h*4].astype('f')/ toJy(f2,beam11))    
-    cTd13 = np.median(CasFlux13GHz/n[gd,1+h*4].astype('f')/ toJy(f1,beam13))
-    stdcTd13 = np.std(CasFlux13GHz/n[gd,1+h*4].astype('f')/ toJy(f1,beam13))
-
-    print '11GHz: ',cTd11,stdcTd11,stdcTd11/cTd11 * 100.
-    print '13GHz: ',cTd13,stdcTd13,stdcTd13/cTd13 * 100.
-    print np.log10(cTd11/cTd13)/np.log10(f2/f1)
-
-    #Calculate stability of uncorrelated channels
-    uTd11 = np.median(CasFlux11GHz/n[gd,4+h*4].astype('f')/ toJy(f2,beam11))
-    stduTd11 = np.std(CasFlux11GHz/n[gd,4+h*4].astype('f')/ toJy(f2,beam11))    
-    uTd13 = np.median(CasFlux13GHz/n[gd,3+h*4].astype('f')/ toJy(f1,beam13))
-    stduTd13 = np.std(CasFlux13GHz/n[gd,3+h*4].astype('f')/ toJy(f1,beam13))
-
-    print '11GHz: ',uTd11,stduTd11,stduTd11/uTd11 * 100.
-    print '13GHz: ',uTd13,stduTd13,stduTd13/uTd13 * 100.
-    print np.log10(uTd11/uTd13)/np.log10(f2/f1)
-
-    #b = CasFlux13GHz/n[gd,3+h*4].astype('f')/ toJy(f1,beam13)
-    #bd = ( (b > 2))
-    #print n[bd,0]
-    #pyplot.plot(n[gd,26].astype('f')+jd0,n[gd,3+h*4].astype('f'),'o')    
-    #pyplot.plot(CasFlux13GHz/n[gd,7].astype('f')/ toJy(f1,beam13),'o')
-    #pyplot.show()
-
-    pyplot.plot(n[gd,26].astype('f')+jd0,CasFlux13GHz/n[gd,1+h*4].astype('f')/ toJy(f1,beam13),'o',label='Correlated 19GHz',alpha=0.8)
-    pyplot.plot(n[gd,26].astype('f')+jd0,CasFlux11GHz/n[gd,4+h*4].astype('f')/ toJy(f2,beam11),'o',label='Uncorrelated 17GHz',alpha=0.8)
-    pyplot.plot(n[gd,26].astype('f')+jd0,CasFlux13GHz/n[gd,3+h*4].astype('f')/ toJy(f1,beam13),'o',label='Uncorrelated 19GHz',alpha=0.8)
-    pyplot.plot(n[gd,26].astype('f')+jd0,CasFlux11GHz/n[gd,2+h*4].astype('f')/ toJy(f2,beam11),'o',label='Correlated 17GHz',alpha=0.8)
-
-    ax = pyplot.gca()
-    ylims = ax.get_ylim()
-    pyplot.plot([56757,56757],[0.,ylims[1]*2.],'--k',linewidth=3)
-    pyplot.ylim(ylims[0],ylims[1])
-
-    pyplot.xlabel(r'MJD')
-    pyplot.ylabel(r'Antenna Temperature (K)')
-    pyplot.legend(numpoints=1)
-
-    pyplot.figure()
-    pyplot.plot(n[gd,26].astype('f')+jd0,n[gd,1+h*4+12].astype('f'),'o',label='Correlated 19GHz')
-    pyplot.plot(n[gd,26].astype('f')+jd0,n[gd,4+h*4+12].astype('f'),'o',label='Uncorrelated 17GHz')
-    pyplot.plot(n[gd,26].astype('f')+jd0,n[gd,3+h*4+12].astype('f'),'o',label='Uncorrelated 19GHz')
-    pyplot.plot(n[gd,26].astype('f')+jd0,n[gd,2+h*4+12].astype('f'),'o',label='Correlated 17GHz')
-
-    ax = pyplot.gca()
-    ylims = ax.get_ylim()
-    pyplot.plot([56757,56757],[0.,ylims[1]*2.],'--k',linewidth=3)
-    pyplot.ylim(ylims[0],ylims[1])
     
-    pyplot.xlabel(r'MJD')
-    pyplot.ylabel(r'r-factor',style='italic')
-    pyplot.legend(numpoints=1)    
-    pyplot.show()
+    beams = [0.92*(0.85*np.pi/180.)**2,0.99*(0.64*np.pi/180.)**2] #Beams of H2 to H4
+    freqs = [[12.891,11.605,12.881,11.149],
+             [12.891,11.605,12.881,11.149],
+             [12.891,11.605,12.881,11.149]] #Freqs of H2 to H4
+
+    channels = np.arange(12,dtype='i')
+    chan = ['H219c','H217c','H219u','H217u','H313c','H311c','H313u','H311u','H419c','H417c','H419u','H417u']
+
+    #Read in bandpasses:
+    bandpasses = ReadBandpasses(mfidir)
+
+    #Read in the data:
+    #crab = np.loadtxt('TauA',dtype='string')
+    crab = np.loadtxt('TauA',dtype='string')   
+    casa = np.loadtxt('CasA',dtype='string')
+
+    el    = np.append(crab[:,25].astype('f'),casa[:,25].astype('f')) + jd0
+    mjd   = np.append(crab[:,26].astype('f'),casa[:,26].astype('f')) + jd0
+    peaks = np.reshape(np.append(crab[:,1:13].astype('f'),casa[:,1:13].astype('f')),(len(mjd),12))
+    srcs  = np.append(np.array([c[0:4] for c in crab[:,0]]),
+                      np.array([c[0:4] for c in casa[:,0]]))
+    dios  = np.reshape(np.append(crab[:,1+12:13+12].astype('f'),casa[:,1+12:13+12].astype('f')),(len(mjd),12))
+    para  = np.append(crab[:,27].astype('f'),casa[:,27].astype('f'))
+
+
+
+    gd    = np.ones(len(srcs),dtype='bool')
+
+    #Fluxs,Corfacts = SourceFlux(bandpasses[0],bandpasses[1][2,:],mjd,srcs)
+    #TDio = Fluxs/(peaks[:,2]*Corfacts)/1000.
+    #gd    = gd & (TDio < 0.69) & (TDio > 100.52)
+    
+    #Fluxs,Corfacts = SourceFlux(bandpasses[0],bandpasses[1][5,:],mjd,srcs)
+    #TDio = Fluxs/(peaks[:,5]*Corfacts)/1000.
+    #gd    = gd & (TDio > 100)
+
+    
+    crabs = np.where((srcs[gd] == 'CRAB'))[0]
+
+    print peaks.shape
+    for ch in channels:
+        Fluxs,Corfacts = SourceFlux(bandpasses[0],bandpasses[1][ch,:],mjd,srcs)
+        TDio = Fluxs/(peaks[:,ch]*Corfacts)/1000.
+
+        gd = (np.abs(TDio-np.median(TDio)) < 0.15) 
+        pfit = np.poly1d(np.polyfit(np.arange(len(TDio[gd])), TDio[gd],1))
+        gd = np.where(gd)[0]
+        
+
+        print np.median(TDio[gd]),np.std(TDio[gd])/np.median(TDio[gd]) * 100.
+
+        #print np.append(crab[:,0],casa[:,0])[(TDio[gd] > 1.31)]
+        
+        pyplot.plot(mjd[gd],TDio[gd],'o')
+        pyplot.plot(mjd[gd[crabs]],TDio[gd[crabs]],'o')
+
+        #pyplot.plot(para[gd],TDio[gd],'o')
+
+
+        pyplot.show()
+    print stop
+    
+    #for ch in channels:
+    #    print chan[ch], '&', '%2.3f' % np.median(dios[:,ch]), '\\\\'
