@@ -5,7 +5,7 @@ import numpy as np
 import healpy as hp
 import Coordinates
 
-def GetPlanetMask(maskmap,mjd,pix,lon=16.5090*np.pi/180.,lat=28.3002*np.pi/180,Planets=[-1,3,5,6],FWHM=[4.,2.5,1.,1.],bandlims={'up':-0.5,'down':-12.5}):
+def GetPlanetMask(maskmap,mjd,pix,lon=16.5090*np.pi/180.,lat=28.3002*np.pi/180,Planets=[-1,5,6],FWHM=[4.,1.,1.],bandlims={'up':-0.5,'down':-12.5}):
     '''
     Return mask for planets and satellites
 
@@ -46,6 +46,15 @@ def GetPlanetMask(maskmap,mjd,pix,lon=16.5090*np.pi/180.,lat=28.3002*np.pi/180,P
         vec    = hp.pixelfunc.pix2vec(nside,cPix)
         ipix   = hp.query_disc(nside,vec,FWHM[i]*np.pi/180.)
         maskmap[ipix] = False
+
+    #The Moon moves a bit fast so do this separately:
+    for t in np.linspace(mjd[0],mjd[-1],6):
+        cRa,cDec = Coordinates.Ephem.plpos(t,lon,lat,3)
+        cPix   = hp.ang2pix(nside,(np.pi/2.-cDec),cRa)
+        vec    = hp.pixelfunc.pix2vec(nside,cPix)
+        ipix   = hp.query_disc(nside,vec,2.5*np.pi/180.)
+        maskmap[ipix] = False
+        
 
     #Pixels containing satellite band
     up     = bandlims['up']

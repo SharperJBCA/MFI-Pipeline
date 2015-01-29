@@ -27,13 +27,15 @@ def SourceFlux(nu_bp,G_bp,mjd,srcs):
     BW = nu_bp*np.sum(G_bp)**2/np.sum(G_bp**2)
 
 
+
     #Central frequency of Tau A:
-    spec_crab = SourceFitting.ModelFlux.TauAFlux(nu_bp,mjd[0])
+    spec_crab = SourceFitting.ModelFlux.TauAFlux(nu_bp,mjd[0])*10.
     nu_c_crab = np.sum(nu_bp*G_bp*spec_crab)/np.sum(G_bp*spec_crab)
 
     #Central frequency of Cas A:
-    spec_casa = SourceFitting.ModelFlux.CasAFlux(nu_bp,mjd[0])
+    spec_casa = SourceFitting.ModelFlux.CasAFlux(nu_bp,mjd[0])*10.
     nu_c_casa = np.sum(nu_bp*G_bp*spec_casa)/np.sum(G_bp*spec_casa)     
+
 
     #Which vals are Cas/Tau:
     crabs = np.where((srcs == 'CRAB'))[0]
@@ -45,12 +47,15 @@ def SourceFlux(nu_bp,G_bp,mjd,srcs):
     fluxs[crabs] = SourceFitting.ModelFlux.TauAFlux(nu_c,mjd[crabs])
     fluxs[casas] = SourceFitting.ModelFlux.CasAFlux(nu_c,mjd[casas])
 
-    #Ratio between 
-    corfact[crabs] = SourceFitting.ModelFlux.TauAFlux(nu_c,mjd[crabs])/SourceFitting.ModelFlux.TauAFlux(nu_c_crab,mjd[crabs])
-    corfact[casas] = SourceFitting.ModelFlux.CasAFlux(nu_c,mjd[casas])/SourceFitting.ModelFlux.CasAFlux(nu_c_casa,mjd[casas])
+    #Ratio between Source at nu_c and Source at nu_c_colour
+    corfact[crabs] = SourceFitting.ModelFlux.TauAFlux(nu_c,mjd[crabs])/ \
+                     SourceFitting.ModelFlux.TauAFlux(nu_c_crab,mjd[crabs]) 
+    
+    corfact[casas] = SourceFitting.ModelFlux.CasAFlux(nu_c,mjd[casas])/ \
+                     SourceFitting.ModelFlux.CasAFlux(nu_c_casa,mjd[casas])
 
 
-    return fluxs,corfact
+    return fluxs,corfact,nu_c
 
 def ReadBandpasses(mfidir):
 
@@ -86,7 +91,10 @@ if __name__ == '__main__':
     #Define telescope constants:
     jd0 = 56244.
     
-    beams = [0.92*(0.85*np.pi/180.)**2,0.99*(0.64*np.pi/180.)**2] #Beams of H2 to H4
+    beams = [0.99*(0.64*np.pi/180.)**2,
+             0.92*(0.85*np.pi/180.)**2,
+             0.99*(0.64*np.pi/180.)**2] #Beams of H2 to H4
+    
     freqs = [[12.891,11.605,12.881,11.149],
              [12.891,11.605,12.881,11.149],
              [12.891,11.605,12.881,11.149]] #Freqs of H2 to H4
@@ -125,28 +133,28 @@ if __name__ == '__main__':
     
     crabs = np.where((srcs[gd] == 'CRAB'))[0]
 
-    print peaks.shape
     for ch in channels:
-        Fluxs,Corfacts = SourceFlux(bandpasses[0],bandpasses[1][ch,:],mjd,srcs)
-        TDio = Fluxs/(peaks[:,ch]*Corfacts)/1000.
+        flatSpec = np.zeros(len(bandpasses[1][ch,:]))
+        flatSpec[np.where(np.abs(bandpasses[0]-13.) < 1.)[0]] = 1.
+        Fluxs,Corfacts,nu_c = SourceFlux(bandpasses[0],bandpasses[1][ch,:],mjd,srcs)
+        
+        TDio = Fluxs/(peaks[:,ch]*Corfacts)/toJy(nu_c,beams[ch/4])
 
         gd = (np.abs(TDio-np.median(TDio)) < 0.15) 
         pfit = np.poly1d(np.polyfit(np.arange(len(TDio[gd])), TDio[gd],1))
         gd = np.where(gd)[0]
-        
 
-        print np.median(TDio[gd]),np.std(TDio[gd])/np.median(TDio[gd]) * 100.
+        print ch+4,np.median(TDio[gd])#,np.std(TDio[gd])/np.median(TDio[gd]) * 100.,np.median(Corfacts)
 
         #print np.append(crab[:,0],casa[:,0])[(TDio[gd] > 1.31)]
         
-        pyplot.plot(mjd[gd],TDio[gd],'o')
-        pyplot.plot(mjd[gd[crabs]],TDio[gd[crabs]],'o')
+        #pyplot.plot(mjd[gd],TDio[gd],'o')
+        #pyplot.plot(mjd[gd[crabs]],TDio[gd[crabs]],'o')
 
         #pyplot.plot(para[gd],TDio[gd],'o')
 
 
-        pyplot.show()
-    print stop
+        #pyplot.show()
     
     #for ch in channels:
     #    print chan[ch], '&', '%2.3f' % np.median(dios[:,ch]), '\\\\'

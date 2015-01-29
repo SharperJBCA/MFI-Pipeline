@@ -33,6 +33,11 @@ def GetRingNoiseMask(data,jd,jdlen,mask,foremask,std_cutoff=0.03,peak_cutoff=0.2
     stds = np.zeros(nrings)
     maxvals = np.zeros(nrings)
 
+    notmask = np.where((foremask & mask))[0]
+    notmaskjd = ijd[notmask]
+    notmaskdata = data[notmask]
+
+    BigStep = 180*50 #ms
     
     for i in range(nrings):
 
@@ -42,19 +47,23 @@ def GetRingNoiseMask(data,jd,jdlen,mask,foremask,std_cutoff=0.03,peak_cutoff=0.2
         else:
             hi = (i+1)*jdlen
 
+        mid = i*jdlen + jdlen/2
+        mhi = int(np.min([len(notmaskjd),mid+BigStep]))
+        mlo = int(np.max([0,mid-BigStep]))
+     
         #Get the data in this loop that is not masked:
-        thisRing = ((ijd >= i*jdlen) & (ijd < hi))
-        thisBkgd = data[(thisRing & foremask & mask)]
+        thisRing = np.where((notmaskjd[mlo:mhi] >= i*jdlen) & (notmaskjd[mlo:mhi] < hi))[0]
+        thisBkgd = notmaskdata[mlo+thisRing]
 
 
         #If there is data, subtract median, check noise and spikes. 
         if thisBkgd.size > 0:
-            data[thisRing] -= np.median(thisBkgd)
-            maxvals[i] = np.max(np.abs(thisBkgd-np.median(thisBkgd)))
+            data[notmask[mlo+thisRing]] -= np.median(thisBkgd)
             stds[i] = np.std(thisBkgd)
+            maxvals[i] = np.max( np.abs(thisBkgd-np.median(thisBkgd)) )
 
             #Filter ring? 
             if (stds[i] > std_cutoff) | (stds[i] == 0) | (maxvals[i] > peak_cutoff):
-                RFIMask[thisRing] = False
+                RFIMask[notmask[mlo+thisRing]] = False
 
     return RFIMask
