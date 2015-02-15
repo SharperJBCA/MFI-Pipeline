@@ -170,7 +170,8 @@ def FullObsMapping(filelist,keys,TPoints,ch,jd0=56244.,nside = 512,dir=''):
 
         thisLen   = hdu[1].data['DATA'].shape[1]
 
-        
+
+        print hdu[1].data['DATA'].shape
         data['TOD'][0,lastLen:lastLen+thisLen,0] = hdu[1].data['DATA'][0,:,ch]
 
         ra,dec,p = Coordinates.Hor2Sky(hdu[1].data['AZ'][0,:,0]*np.pi/180.,

@@ -55,3 +55,34 @@ def Hor2Sky(az,el,mjd,lat=28.3002*np.pi/180,lng=16.5090*np.pi/180.,gal=0,TPoints
 
     return np.mod(ra,2.*np.pi),dec,p
                                          
+def Sky2Hor(ra,dec,mjd,lat=28.3002*np.pi/180,lng=16.5090*np.pi/180.):
+    '''
+    Return horizon coordinates
+
+    Arguments
+    ra -- Focal right ascension coordinates (radians)
+    dec -- Focal declination coordinates (radians)
+    mjd -- Time in modified Julian Date
+
+    Keyword Arguments
+    lat -- Latitude of telescope, positive towards North (radians)
+    lng -- Longitude of telescope, postive towards West (radians)
+
+    Notes: The default for lat and lng are the position of the QUIJOTE
+    MFI, Izana Observatory, Tenerife.
+    
+    '''
+    if (np.max(ra) > 2.*np.pi) | (np.min(ra) < 0.):
+        print 'WARNING: RIGHT ASCENSION OUT OF RANGE (0 < ra < 2pi)'
+        return None
+
+    if (np.max(dec) > np.pi) | (np.min(dec) < -np.pi):
+        print 'WARNING: DECLINATION OUT OF RANGE (-pi < dec < pi)'
+        return None
+
+    if np.max(mjd) > 2400000:
+        print 'WARNING: ARE YOU USING MODIFIED JULIAN DATE?'
+
+    az,el = fCoord_tpt.get_e2h(ra, dec, mjd, lng, lat)
+
+    return np.mod(az,2.*np.pi),el

@@ -5,6 +5,31 @@
 !  FOCAL PLANE GEOMETRY.
 !
 
+subroutine get_e2h(ra, dec, mjd, lng, lat, az,el, n)
+  implicit none
+
+  integer n
+!f2py intent(in) n
+  real*8 lat, lng
+!f2py intent(in) lat, lng
+  real*8 ra(n), dec(n), mjd(n)
+!f2py intent(in) ra, dec, mjd
+  real*8 az(n), el(n)
+!f2py intent(out) az, el
+
+  real*8, external :: sla_gmst
+  real*8  ha,lst
+  integer  i
+
+  do i=1,n
+     lst = sla_gmst(mjd(i))
+     !lst = lst - lng
+     ha  = lst - ra(i) - lng
+     call sla_de2h(ha,dec(i),lat,az(i),el(i))
+  end do
+
+end subroutine get_e2h
+
 subroutine get_h2e_tpoint(az, el, xpos, ypos, Pf, Px, Py, Pc, Pn, Pa, Pb, lat,lng, mjd,gal, ra,dec,p, n)
   implicit none
 
@@ -77,126 +102,135 @@ subroutine ffunc_h2e(az, el, xpos, ypos, Pf, Px, Py, Pc, Pn, Pa, Pb,azc,elc)
   integer, PARAMETER :: maxiter = 100
 
   !Horn focal plane position:
-  top = xpos*sin(el)*cos(el) * (1.0/tan(el) + tan(el))
-  bot = cos(el) - ypos*sin(el)
-  daz = atan2(top,bot)
+  IF (abs(ypos) > 0) THEN
+     top = xpos*sin(el)*cos(el) * (1.0/tan(el) + tan(el))
+     bot = cos(el) - ypos*sin(el)
+     daz = atan2(top,bot)
+     azc = az + daz 
+  ELSE
+     azc = az
+  ENDIF
 
-  top = sin(daz)/xpos - (cos(el)*cos(daz))
-  bot = sin(el)
-  del = atan(top/bot)
+  IF (abs(xpos) > 0) THEN
+     top = sin(daz)/xpos - (cos(el)*cos(daz))
+     bot = sin(el)
+     del = atan(top/bot)
+     elc = del
+  ELSE
+     elc = el
+  ENDIF
+
 
   IF ((abs(xpos) > 0) .AND. (abs(ypos) > 0)) THEN 
-     azc = az + daz 
-     elc = del
 
-  !Encoder offsets:
-  azc = azc - Pa
-  elc = elc + Pb
+     !Encoder offsets:
+     azc = azc - Pa
+     elc = elc + Pb
 
-  !Convert to cartisian
-  x = -cos(elc) * cos(azc)
-  y =  cos(elc) * sin(azc)
-  z =  sin(elc)
+     !Convert to cartisian
+     x = -cos(elc) * cos(azc)
+     y =  cos(elc) * sin(azc)
+     z =  sin(elc)
+     
+     !Non-perpendicularities:
+     x0 = x
+     y0 = y
+     z0 = z
   
-  !Non-perpendicularities:
-  x0 = x
-  y0 = y
-  z0 = z
+     do j=1,maxiter
+        w = (Pc + Pn*z) / sqrt(x*x + y*y)
+        dx0 = - w*(y - w*x)
+        dy0 =   w*(x + w*y)
+        dz0 =   0.0
+        
+        xa = x0 + dx0
+        ya = y0 + dy0
+        za = z0 + dz0
+        
+        w   =     (Pc+ Pn*za) / sqrt(xa*xa + ya*ya)
+        dxn = - w*(ya - w*xa)
+        dyn =   w*(xa + w*ya)
+        dzn =   0.0
+        
+        x = xa
+        y = ya
+        z = za
+        
+        IF (abs(dx0 - dxn) < 0.00001 .AND. abs(dy0 - dyn) < 0.00001 .AND. abs(dz0 - dzn) < 0.00001) THEN
+           EXIT
+        END IF
+     end do
   
-  do j=1,maxiter
-     w = (Pc + Pn*z) / sqrt(x*x + y*y)
-     dx0 = - w*(y - w*x)
-     dy0 =   w*(x + w*y)
-     dz0 =   0.0
+     x = x0 + dxn
+     y = y0 + dyn
+     z = z0 + dzn
+  
+     !Roll-axis misalignment:
+     x0 = x
+     y0 = y
+     z0 = z
+     
+     do j=1,maxiter
+        dx0 = - Px*z
+        dy0 = - Py*z
+        dz0 =   Px*x + Py*y
+        
+        xa = x0 + dx0
+        ya = y0 + dy0
+        za = z0 + dz0
+        
+        dxn = - Px*za
+        dyn = - Py*za
+        dzn =   Px*xa + Py*ya
+        
+        x = xa
+        y = ya
+        z = za
+     
+        IF (abs(dx0 - dxn) < 0.00001 .AND. abs(dy0 - dyn) < 0.00001 .AND. abs(dz0 - dzn) < 0.00001) THEN
+           EXIT
+        END IF
+     end do
+  
+     x = x0 + dxn
+     y = y0 + dyn
+     z = z0 + dzn
+     
+     !Hookes Law:
 
-     xa = x0 + dx0
-     ya = y0 + dy0
-     za = z0 + dz0
-     
-     w   =     (Pc+ Pn*za) / sqrt(xa*xa + ya*ya)
-     dxn = - w*(ya - w*xa)
-     dyn =   w*(xa + w*ya)
-     dzn =   0.0
-     
-     x = xa
-     y = ya
-     z = za
-     
-     IF (abs(dx0 - dxn) < 0.00001 .AND. abs(dy0 - dyn) < 0.00001 .AND. abs(dz0 - dzn) < 0.00001) THEN
-        EXIT
-     END IF
-  end do
-
-  x = x0 + dxn
-  y = y0 + dyn
-  z = z0 + dzn
+     x0 = x
+     y0 = y
+     z0 = z
   
-  !Roll-axis misalignment:
-  x0 = x
-  y0 = y
-  z0 = z
+     do j=1,maxiter
+        dx0 =   Pf*z*x
+        dy0 =   Pf*z*y
+        dz0 = - Pf*(x*x + y*y)
+        
+        xa = x0 + dx0
+        ya = y0 + dy0
+        za = z0 + dz0
+     
+        dxn =   Pf*za*xa
+        dyn =   Pf*za*ya 
+        dzn = - Pf*(xa*xa + ya*ya) 
+     
+        x = xa
+        y = ya
+        z = za
+     
+        IF (abs(dx0 - dxn) < 0.00001 .AND. abs(dy0 - dyn) < 0.00001 .AND. abs(dz0 - dzn) < 0.00001) THEN
+           EXIT
+        END IF
+     end do
   
-  do j=1,maxiter
-     dx0 = - Px*z
-     dy0 = - Py*z
-     dz0 =   Px*x + Py*y
-     
-     xa = x0 + dx0
-     ya = y0 + dy0
-     za = z0 + dz0
-     
-     dxn = - Px*za
-     dyn = - Py*za
-     dzn =   Px*xa + Py*ya
-     
-     x = xa
-     y = ya
-     z = za
-     
-     IF (abs(dx0 - dxn) < 0.00001 .AND. abs(dy0 - dyn) < 0.00001 .AND. abs(dz0 - dzn) < 0.00001) THEN
-        EXIT
-     END IF
-  end do
+     x = x0 + dxn
+     y = y0 + dyn
+     z = z0 + dzn
   
-  x = x0 + dxn
-  y = y0 + dyn
-  z = z0 + dzn
-  
-  !Hookes Law:
-
-  x0 = x
-  y0 = y
-  z0 = z
-  
-  do j=1,maxiter
-     dx0 =   Pf*z*x
-     dy0 =   Pf*z*y
-     dz0 = - Pf*(x*x + y*y)
-     
-     xa = x0 + dx0
-     ya = y0 + dy0
-     za = z0 + dz0
-     
-     dxn =   Pf*za*xa
-     dyn =   Pf*za*ya 
-     dzn = - Pf*(xa*xa + ya*ya) 
-     
-     x = xa
-     y = ya
-     z = za
-     
-     IF (abs(dx0 - dxn) < 0.00001 .AND. abs(dy0 - dyn) < 0.00001 .AND. abs(dz0 - dzn) < 0.00001) THEN
-        EXIT
-     END IF
-  end do
-  
-  x = x0 + dxn
-  y = y0 + dyn
-  z = z0 + dzn
-  
-  !Convert back to AZ,EL
-  elc = asin( z/sqrt(x*x + y*y + z*z) ) 
-  azc = pi - atan2(y,x)
+     !Convert back to AZ,EL
+     elc = asin( z/sqrt(x*x + y*y + z*z) ) 
+     azc = pi - atan2(y,x)
 
 
 

@@ -15,9 +15,10 @@ def UniqueFiles(substring,dir=''):
     files = glob.glob(dir+substring)
     files = [f[0:-8] for f in files]
 
+    print dir, substring
     #Find unique filenames and sort:
-    ufiles = np.unique(files)
-    ufiles = np.sort(ufiles)
+    ufiles = np.sort(files)    
+    ufiles = np.unique(ufiles)
 
     ufiles = np.array([u[len(dir):] for u in ufiles])
 

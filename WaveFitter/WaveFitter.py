@@ -19,12 +19,12 @@ def FitSine(P,X):
 
     return P[0] + P[1]*np.cos( 2.*np.pi * (X)/P[3] + P[2]*2*np.pi )
 
-def Error(P,X,Y):
+def Error(P,X,Y,wave):
     '''
     Return array of residuals
     '''
 
-    P[3] = 360.
+    P[3] = 360.#wave*1.
     if (P[3] > 0):
         P[2] = np.mod(P[2],1.)
         return (FitSine(P,X) - Y)
@@ -32,7 +32,7 @@ def Error(P,X,Y):
         return Y*0. + 1e24
 
 
-def FFTMethod(x_in,y_in):
+def FFTMethod(x_in,y_in,wave=None):
     '''
     Return best fit parameters to a discontinuous sinewave
 
@@ -81,7 +81,9 @@ def FFTMethod(x_in,y_in):
 
 
 
-    wave  = np.abs((2.*np.pi)/freqs[idx])
+    if wave == None:
+        wave  = np.abs((2.*np.pi)/freqs[idx])
+        
     phase = np.mod(np.angle(fdata[idx])/(2.*np.pi),1)
 
 
@@ -91,11 +93,11 @@ def FFTMethod(x_in,y_in):
 
     P0 = [mid ,amp, phase ,wave]
 
-    P1, s = sp.leastsq(Error,P0,args=(X,Y))
+    P1, s = sp.leastsq(Error,P0,args=(X,Y,wave))
 
     if P1[1] < (np.max(Y)-np.mean(Y))/100.:
         P0 = [mid ,amp, np.mod(phase+0.5,1) ,wave]
-        P1, s = sp.leastsq(Error,P0,args=(X,Y))
+        P1, s = sp.leastsq(Error,P0,args=(X,Y,wave))
 
 
     return P1

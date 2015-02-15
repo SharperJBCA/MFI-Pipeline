@@ -32,7 +32,10 @@ def CalDriftModel(data,c):
     
     time = np.arange(nPulses)
     for i in range(nPulses):
-        amax[i] = (calSig[i*pulseTime:(i+1)*pulseTime,0]).argmax() - spikeVoltage
+        if np.max(calSig[i*pulseTime:(i+1)*pulseTime,0]) > 1e-3:
+            amax[i] = (calSig[i*pulseTime:(i+1)*pulseTime,0]).argmax() - spikeVoltage
+        else:
+            amax[i] = (calSig[i*pulseTime:(i+1)*pulseTime,18]).argmax() - spikeVoltage
 
     
     pfit = ip.interp1d(time,amax)
