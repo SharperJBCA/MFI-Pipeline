@@ -34,12 +34,13 @@ def Count(filelist,keys,dir=''):
     '''
 
     hdu = pyfits.open(dir+filelist[0])
+
     dShapes = [np.array([1.,0.,hdu[1].data[k].shape[2]],dtype='i') for k in keys]
 
     #Count number of samples in files    
     for i,f in enumerate(filelist):
         hdu = pyfits.open(dir+f)
-        
+
         for ik,k in enumerate(keys):
             dShapes[ik][1] += hdu[1].data[k].shape[1]
         

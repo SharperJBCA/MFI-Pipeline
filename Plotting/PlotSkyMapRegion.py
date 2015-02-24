@@ -9,6 +9,8 @@ from astropy.visualization.mpl_normalize import ImageNormalize
 from skimage import exposure
 import matplotlib as mpl
 
+import aplpy
+
 if __name__ == "__main__":
 
     if len(sys.argv) == 1:
@@ -42,33 +44,13 @@ if __name__ == "__main__":
         
         
 
-    #Setup mesh grid for image
-    xsize = 2000
-    ysize = xsize/2.
+    gc = aplpy.FITSFigure(filename)
+    gc.show_colorscale(cmap = cmap,stretch='arcsinh',vmax=15)
+    gc.tick_labels.set_xformat('dd')
+    gc.tick_labels.set_yformat('dd')    
+    pyplot.show()
 
-    theta = np.linspace(np.pi, 0, ysize)
-    phi   = np.linspace(-np.pi, np.pi, xsize)
-    longitude = np.radians(np.linspace(-180, 180, xsize))
-    latitude = np.radians(np.linspace(-90, 90, ysize))
-
-    PHI, THETA = np.meshgrid(phi, theta)
-
-    #Import healpix map:
-    m = hp.read_map(filename)
-    nside = int(np.sqrt(m.size/12))
-
-    vmin = np.min(m[m != hp.UNSEEN])
-    vmax = np.max(m[m != hp.UNSEEN])
-
-    #Get healpix pixels for cartisian grid:
-    grid_pix = hp.ang2pix(nside,THETA,PHI)
-    grid_map = m[grid_pix]
-
-    grid_mapshape = grid_map.shape
-    grid_map = np.reshape(grid_map,grid_map.shape[0]*grid_map.shape[1])
-    grid_map[grid_map == 0] = np.nan
-    grid_map = np.reshape(grid_map,grid_mapshape)
-
+    '''
     #Plot mollweide projection:
     fig = pyplot.figure(figsize=(13,8))
     # matplotlib is doing the mollveide projection
@@ -94,4 +76,4 @@ if __name__ == "__main__":
     pyplot.grid(True,linewidth=2,color='#ADADAD',linestyle=':',alpha=0.8)
     
     pyplot.show()
-    
+    '''
