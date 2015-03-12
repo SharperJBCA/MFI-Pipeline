@@ -68,7 +68,7 @@ def FitSource(data,xi,yi,beam={'X':[0.92/2.355,True],'Y':[0.92/2.355,True]},rval
     #Define some default values for rvals:
     if type(rvals) != type(dict()):
         rvals = {'r0':beam['X'][0]*3.5,
-                 'r1':beam['X'][0]*0.8,
+                 'r1':beam['X'][0]*0.6,
                  'r2':beam['X'][0]*3.,
                  'r3':beam['X'][0]*6.}
 

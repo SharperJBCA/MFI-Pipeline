@@ -45,9 +45,21 @@ if __name__ == "__main__":
         
 
     gc = aplpy.FITSFigure(filename)
-    gc.show_colorscale(cmap = cmap,stretch='arcsinh',vmax=15)
+    gc.show_colorscale(cmap = cmap)#,stretch='arcsinh')#,vmax=150)
     gc.tick_labels.set_xformat('dd')
-    gc.tick_labels.set_yformat('dd')    
+    gc.tick_labels.set_yformat('dd')
+    gc.tick_labels.set_font(size=14)  
+    gc.add_colorbar()
+    gc.colorbar.set_font(size=14)
+    gc.colorbar.set_axis_label_text('mK')
+    gc.colorbar.set_axis_label_font(size=16)
+    gc.set_nan_color('#DDDDDD')
+    
+    #gc.axis_labels.hide_x()
+    #gc.axis_labels.hide_y()
+    #gc.tick_labels.hide_x()
+    #gc.tick_labels.hide_y()
+
     pyplot.show()
 
     '''

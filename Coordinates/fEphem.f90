@@ -27,3 +27,23 @@ subroutine plpos(mjd,lon,lat,planet,gal,ra,dec)
   end if
   
 end subroutine plpos
+
+
+
+subroutine planet(mjd,NP,PV)
+  implicit none
+  
+  integer  NP
+!f2py intent(in) NP
+
+  real*8 mjd
+!f2py intent(in) mjd
+
+  real*8 PV(6)
+!f2py intent(out) PV
+
+  integer JSTAT
+
+  call sla_planet(mjd,NP,PV,JSTAT)
+  
+end subroutine planet

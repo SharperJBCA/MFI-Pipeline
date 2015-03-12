@@ -5,7 +5,7 @@
 import numpy as np
 import fCoord_tpt
 
-def Hor2Sky(az,el,mjd,lat=28.3002*np.pi/180,lng=16.5090*np.pi/180.,gal=0,TPoints=None):
+def Hor2Sky(az,el,mjd,lat=28.300258*np.pi/180,lng=16.510112*np.pi/180.,gal=0,TPoints=None):
     '''
     Return sky coordinates and parallactic angle
 
@@ -55,7 +55,7 @@ def Hor2Sky(az,el,mjd,lat=28.3002*np.pi/180,lng=16.5090*np.pi/180.,gal=0,TPoints
 
     return np.mod(ra,2.*np.pi),dec,p
                                          
-def Sky2Hor(ra,dec,mjd,lat=28.3002*np.pi/180,lng=16.5090*np.pi/180.):
+def Sky2Hor(ra,dec,mjd,lat=28.300258*np.pi/180,lng=16.510112*np.pi/180.):
     '''
     Return horizon coordinates
 

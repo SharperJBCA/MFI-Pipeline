@@ -74,13 +74,14 @@ if __name__ == "__main__":
     # matplotlib is doing the mollveide projection
     ax = fig.add_subplot(111,projection='mollweide')
 
-    norm = ImageNormalize(vmin=-2.,vmax=15,stretch=vis.AsinhStretch(),clip=True)
+    norm = ImageNormalize(vmin=-2.,vmax=20,stretch=vis.AsinhStretch(),clip=True)
     image = pyplot.pcolormesh(longitude[::-1], latitude, grid_map, rasterized=True, cmap=cmap,norm=norm)#, vmin=vmin, vmax=vmax)#, vmin=vmin, vmax=vmax)
 
     # colorbar
-    cb = fig.colorbar(image, orientation='horizontal', shrink=.6, pad=0.05 )#,ticks=[vmin, vmax])
+    cb = fig.colorbar(image, orientation='horizontal', shrink=.6, pad=0.05 ,ticks=np.array([-2,0,2.5,5,10,20]))#,ticks=[vmin, vmax])
     cb.ax.xaxis.set_label_text('mK')
     cb.ax.xaxis.labelpad = -2
+
     # workaround for issue with viewers, see colorbar docstring
     cb.solids.set_edgecolor("face")
 
@@ -92,6 +93,7 @@ if __name__ == "__main__":
     ax.set_longitude_grid_ends(90)
     ax.xaxis.set_ticklabels([])
     pyplot.grid(True,linewidth=2,color='#ADADAD',linestyle=':',alpha=0.8)
+
     
     pyplot.show()
     

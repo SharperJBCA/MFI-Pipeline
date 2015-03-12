@@ -36,3 +36,10 @@ def plpos(mjd,lon,lat,planet,gal=0):
 
     print rCen*180./np.pi,dCen*180./np.pi
     return np.mod(rCen,2.*np.pi), dCen
+
+
+def Planet(mjd,NP):
+
+    PV = fEphem.planet(mjd,NP)
+
+    return PV
