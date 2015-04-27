@@ -39,7 +39,7 @@ def GetRingNoiseMask(data,jd,jdlen,mask,foremask,std_cutoff=0.03,peak_cutoff=0.2
 
     '''
 
-
+    print 'HELLO FROM GETRINGNOISEMASK!'
     
     RFIMask = np.ones(mask.size,dtype='bool')
     SpikeMask = np.zeros(mask.size,dtype='bool')
@@ -55,8 +55,6 @@ def GetRingNoiseMask(data,jd,jdlen,mask,foremask,std_cutoff=0.03,peak_cutoff=0.2
     maxvals = np.zeros(nrings)
 
     lastStep = 0
-
-
 
 
 
@@ -156,7 +154,7 @@ def GetRingNoiseMask(data,jd,jdlen,mask,foremask,std_cutoff=0.03,peak_cutoff=0.2
     #print 'SIZES:',data.size,RFIMask.size,std_cutoff,peak_cutoff
     #from matplotlib import pyplot
     #pyplot.plot(stds,'o')
-    #pyplot.figure()
+    #pyplot.show()
 
     #pyplot.plot(maxvals,'o')
     #pyplot.figure()
@@ -168,6 +166,9 @@ def GetRingNoiseMask(data,jd,jdlen,mask,foremask,std_cutoff=0.03,peak_cutoff=0.2
 
     #pyplot.plot(ijd[mask & foremask],RFIMask[mask & foremask],',')
 
+    #pyplot.show()
+    #from matplotlib import pyplot
+    #pyplot.plot(data,',')
     #pyplot.show()
 
     return SpikeMask,RFIMask

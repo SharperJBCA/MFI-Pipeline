@@ -155,9 +155,9 @@ def FullObsMapping(filelist,keys,TPoints,ch,jd0=56244.,nside = 512,dir=''):
     dShapes,nFiles = Count(filelist,keys,dir=dir)
 
     #Setup data containers
-    data = {'TOD':np.zeros((1,dShapes[0][1],1)),
-            'PIX':np.zeros((1,dShapes[0][1],1)),
-            'MASK':np.zeros((1,dShapes[0][1],1),dtype='bool')}
+    data = {'TOD' :np.zeros((1,dShapes[0][1],1)),
+            'PIX' :np.zeros((1,dShapes[0][1],1)),
+            'MASK':np.zeros((1,dShapes[0][1],1) ,dtype='bool')}
 
 
     #Read in the data properly
@@ -179,7 +179,8 @@ def FullObsMapping(filelist,keys,TPoints,ch,jd0=56244.,nside = 512,dir=''):
                                        hdu[1].data['EL'][0,:,0]*np.pi/180.,
                                        hdu[1].data['JD'][0,:,0]+jd0,TPoints=TPoints)
 
-        data['MASK'][0,lastLen:lastLen+thisLen,0] = hdu[1].data['MASK'][0,:,ch].astype('bool') & (dec > 0.) 
+        dbec = (np.pi/2.-dec)*180./np.pi
+        data['MASK'][0,lastLen:lastLen+thisLen,0] = hdu[1].data['MASK'][0,:,ch].astype('bool') & ((dbec > -2.9) | (dbec < -5.5) ) & (hdu[1].data['NIGHT'][0,:,0] == 1)
 
         pix = hp.ang2pix(nside,np.pi/2.-dec,ra)
 

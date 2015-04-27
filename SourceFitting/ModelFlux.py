@@ -4,6 +4,27 @@
 
 import numpy as np
 
+def CygAFlux(nu,mjd):
+    '''
+    Return expected flux of Cyg A for a given frequency and time in Jy.
+
+    Arguments
+    nu -- Frequency in GHz
+    mjd -- Time in modified Julian Date (Not used)
+    
+    '''
+
+    #Flux parameters:
+    a = 1.482
+    b = -1.2
+    c = 0.
+
+    if isinstance(mjd,type(list)) | isinstance(mjd,type(np.array)):
+        return 10**(a + b*np.log10(nu/40.) + c*np.log10(nu/40.)**2 ) * np.ones(len(mjd))
+    else:
+        return 10**(a + b*np.log10(nu/40.) + c*np.log10(nu/40.)**2 ) 
+
+    
 def CasAFlux(nu,mjd):
     '''
     Return expected flux of Cas A for a given frequency and time in Jy.
@@ -14,17 +35,30 @@ def CasAFlux(nu,mjd):
     
     '''
     
-    #Tobs = years from 2000
-    Tobs = (mjd - 51543.)/365.25
-
     #Flux parameters for year 2000
     a =  2.204
     b = -0.682
     c = 0.038
 
-    alpha = 5.3e-3 #per year
+    alpha = (0.68 - 0.15 * np.log10(nu))/100.#5.3e-3 #per year
 
-    return 10**(a + b*np.log10(nu/40.) + c*np.log10(nu/40.)**2 ) * (1 - alpha*Tobs)
+    return 10**(a + b*np.log10(nu/40.) + c*np.log10(nu/40.)**2 ) * CasASecular(nu,mjd)
+    #return 179.9*(nu/33.)**-0.668 * np.exp( -alpha*Tobs)
+    
+def CasASecular(nu,mjd):
+    '''
+    Return expected flux of Tau A for a given frequency and time in Jy.
+
+    Arguments
+    mjd -- Time in modified Julian Date
+    
+    '''
+    
+    #Tobs = years from 2003
+    Tobs = mjd/365.25 - ( 51543./365.25)
+    alpha = (0.68 - 0.15 * np.log10(nu))/100.#5.3e-3 #per year
+
+    return np.exp( -alpha*Tobs) #Macias-Perez 2010
 
 def TauAFlux(nu,mjd):
     '''
@@ -36,20 +70,41 @@ def TauAFlux(nu,mjd):
     
     '''
     
-    #Tobs = years from 2005
-    Tobs = (mjd - 51543.)/365.25 + 5.
+    #Tobs = years from 2003
+    Tobs = mjd/365.25 -   ( 3. + 51543./365.25)
 
-    #Flux parameters for year 2000
-    a =  2.502
-    b = -0.35
+    #Flux parameters for year 2005
+    a = 2.506
+    b = -0.302
     c = 0.0
     #a =  2.506
     #b = -0.302
     #c = 0.0
 
-    alpha = 2.2e-3 #per year
+    alpha = 0.22/100. #per year
 
-    return 10**(a + b*np.log10(nu/40.) + c*np.log10(nu/40.)**2 ) * (1. - alpha*Tobs)
+    #print 'Percentage Flux Change:',(1. - alpha*Tobs)*100.,Tobs
+    #print 'MEAN FLUX:', np.median( 10**(a + b*np.log10(nu/40.) ) * (1. - alpha*Tobs)), \
+    #       np.median(10**(a + b*np.log10(nu/40.) )),np.mean(nu)
+
+    return 973.*nu**(-0.296) * TauASecular(mjd)#* np.exp(-1.67e-3 * Tobs) #Macias-Perez 2010
+    #return 10**(a + b*np.log10(nu/40.) ) * (1. - alpha*Tobs)
+
+
+def TauASecular(mjd):
+    '''
+    Return expected flux of Tau A for a given frequency and time in Jy.
+
+    Arguments
+    mjd -- Time in modified Julian Date
+    
+    '''
+    
+    #Tobs = years from 2003
+    Tobs = mjd/365.25 -   ( 3. + 51543./365.25)
+
+    return np.exp(-1.67e-3 * Tobs) #Macias-Perez 2010
+    #return 10**(a + b*np.log10(nu/40.) ) * (1. - alpha*Tobs)    
 
 
 def SourceCoord(source,gal=False):
@@ -117,7 +172,7 @@ def toJy(nu,beam):
 
     k = 1.3806488e-23
     c = 299792458.
-    nu *= 1e9
+    inu = nu*1e9
     Jy = 1e26
 
-    return 2.*k*nu**2/c**2 * beam * Jy
+    return 2.*k*inu**2/c**2 * beam * Jy

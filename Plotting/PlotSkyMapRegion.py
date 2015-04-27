@@ -45,7 +45,7 @@ if __name__ == "__main__":
         
 
     gc = aplpy.FITSFigure(filename)
-    gc.show_colorscale(cmap = cmap)#,stretch='arcsinh')#,vmax=150)
+    gc.show_colorscale(cmap = cmap,vmax=18)#,stretch='arcsinh')#,vmax=150)
     gc.tick_labels.set_xformat('dd')
     gc.tick_labels.set_yformat('dd')
     gc.tick_labels.set_font(size=14)  

@@ -5,7 +5,7 @@ import numpy as np
 import healpy as hp
 import Coordinates
 
-def GetPlanetMask(maskmap,mjd,pix,lon=16.5090*np.pi/180.,lat=28.3002*np.pi/180,Planets=[-1,5,6],FWHM=[4.,1.,1.],bandlims={'up':-0.5,'down':-12.5}):
+def GetPlanetMask(data,maskmap,mjd,pix,lon=16.5090*np.pi/180.,lat=28.3002*np.pi/180,Planets=[-1],FWHM=[4.],bandlims={'up':-0.5,'down':-12.5},satMask=None):
     '''
     Return mask for planets and satellites
 
@@ -55,13 +55,34 @@ def GetPlanetMask(maskmap,mjd,pix,lon=16.5090*np.pi/180.,lat=28.3002*np.pi/180,P
         ipix   = hp.query_disc(nside,vec,2.5*np.pi/180.)
         maskmap[ipix] = False
         
-
     #Pixels containing satellite band
     up     = bandlims['up']
     down   = bandlims['down']
-    
-    satpix = hp.query_strip(nside, (90.-up)*np.pi/180., (90.-down)*np.pi/180.)
 
-    maskmap[satpix] = False
+    if isinstance(satMask,type(None)):
+        satpix = hp.query_strip(nside, (90.-up)*np.pi/180., (90.-down)*np.pi/180.)
+        maskmap[satpix] = False
   
-    return maskmap[pix]
+        return maskmap[pix]
+ 
+    else:
+        #from matplotlib import pyplot
+        #from MapMaker.Destriper import Control
+
+        #nside = 512
+        #npix = 12*nside**2
+        #pyplot.plot(satMask[1],data,',')
+        #pyplot.show()
+        #m = maskmap[pix].astype('bool')
+        #s = satMask[1][m]
+        #d = data[m]
+        #print s.size,d.size
+        #Maps = Control.Destriper(d,d.size,s.astype('i'),npix,Medians=True,cn=np.ones(d.size))
+        #e,a = hp.pix2ang(nside,np.arange(npix))
+        #pyplot.plot(a*180./np.pi,Maps.m)
+        #pyplot.show()
+        #Maps.m[Maps.m == 0] = hp.UNSEEN        
+        #hp.mollview(satMask[0],rot=[180,0])#*np.abs(satMask[0]-1.)
+        #hp.cartview(Maps.m,rot=[180,0],lonra=[-180,180],latra=[42,52],norm='hist')        
+        #pyplot.show()
+        return maskmap[pix].astype('bool') & (satMask[0][satMask[1]]==0).astype('bool')

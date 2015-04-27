@@ -81,6 +81,34 @@ subroutine get_h2e_tpoint(az, el, xpos, ypos, Pf, Px, Py, Pc, Pn, Pa, Pb, lat,ln
   
 end subroutine get_h2e_tpoint
 
+subroutine get_horizon_tpoint(az, el, xpos, ypos, Pf, Px, Py, Pc, Pn, Pa, Pb,iaz,iel, n)
+  implicit none
+
+  integer n
+!f2py intent(in) n
+  
+  real*8 az(n), el(n)
+!f2py intent(in) az, el
+
+  real*8 xpos,ypos,Pf, Px, Py, Pc, Pn, Pa, Pb
+!f2py intent(in) xpos,ypos,Pf, Px, Py, Pc, Pn, Pa, Pb
+
+  real*8 iaz(n), iel(n)
+!f2py intent(out) iaz,iel
+
+  !Internal arrays:
+  integer i
+
+  real*8 azc,elc
+
+  !Apply corrections:
+  do i=1,n
+     call ffunc_h2e(az(i),el(i),xpos,ypos,Pf,Px,Py,Pc,Pn,Pa,Pb,iaz(i),iel(i))
+  end do 
+  
+end subroutine get_horizon_tpoint
+
+
 !!!! DENIS' POINTING MODEL !!!!
 
 subroutine ffunc_h2e(az, el, xpos, ypos, Pf, Px, Py, Pc, Pn, Pa, Pb,azc,elc)
